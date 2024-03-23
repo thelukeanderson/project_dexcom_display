@@ -18,15 +18,15 @@ class DexcomGlucoseDisplay:
         self.master.grid_columnconfigure(1, weight=1)
 
         # Create a label to display the dexcom last glucose reading
-        self.last_reading_label = tk.Label(self.master, text="---", font=("Helvetica", 36))
+        self.last_reading_label = tk.Label(self.master, fg="green", bg="black", text="---", font=("Helvetica", 36))
         self.last_reading_label.grid(row=0, column=0, pady=(20, 10), columnspan=2)
         
         # Create a label to display the reading time
-        self.show_reading_time_label = tk.Label(self.master, text="---", font=("Helvetica", 36))
+        self.show_reading_time_label = tk.Label(self.master, fg="green", bg="black", text="---", font=("Helvetica", 36))
         self.show_reading_time_label.grid(row=1, column=0, pady=(20, 10))
         
         # Create a label to display the current time
-        self.show_current_time_label = tk.Label(self.master, text="---", font=("Helvetica", 36))
+        self.show_current_time_label = tk.Label(self.master, fg="green", bg="black", text="---", font=("Helvetica", 36))
         self.show_current_time_label.grid(row=1, column=1, pady=(20, 10))
 
         # Bind window resize event to adjust font size
@@ -34,8 +34,11 @@ class DexcomGlucoseDisplay:
 
     def adjust_font_size(self, event):
         width = self.master.winfo_width()
-        font_size = max(int(width / 5), 12)  # Adjust the denominator to change how font size scales
-        self.last_reading_label.config(font=("Helvetica", font_size))
+        reading_font_size = max(int(width / 5), 12)  
+        time_font_size = max(int(width / 25), 12)  
+        self.last_reading_label.config(font=("Helvetica", reading_font_size))
+        self.show_reading_time_label.config(font=("Helvetica", time_font_size))
+        self.show_current_time_label.config(font=("Helvetica", time_font_size))
 
 
 def update_label(glucose_label, reading_time_label, current_time_label, user_str, password_str):
@@ -66,6 +69,7 @@ def main():
 
     # Run the thing
     root = tk.Tk()
+    root.configure(background='black')
     app = DexcomGlucoseDisplay(root)
     update_label(app.last_reading_label, app.show_reading_time_label, app.show_current_time_label, user_name, password)
     root.mainloop()
