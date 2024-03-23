@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 from pydexcom import Dexcom
 from login_helper import get_user_credentials
+import argparse
 
 class DexcomGlucoseDisplay:
     def __init__(self, master):
@@ -60,9 +61,7 @@ def update_label(glucose_label, reading_time_label, current_time_label, user_str
     glucose_label.after(60000, update_label, glucose_label, reading_time_label, current_time_label, user_str, password_str)
 
 
-def main():
-    # Get the user credentials
-    user_name, password = get_user_credentials()
+def main(user_name, password):
 
     # Run the thing
     root = tk.Tk()
@@ -71,4 +70,19 @@ def main():
     root.mainloop()
 
 if __name__ == "__main__":
-    main()
+
+    parser = argparse.ArgumentParser(description="Opens a display showing a users dexcom reading and trend. If --user and --password aren't given it will prompt with a GUI")
+    parser.add_argument('-u', '--user', required=False, help='dexcom username')
+    parser.add_argument('-p', '--password', required=False, help='dexcom password')
+
+    args = parser.parse_args()
+
+    if not args.user or not args.password:
+        # Get the user credentials
+        user_name, password = get_user_credentials()
+
+    else:
+        user_name = args.user
+        password = args.password
+
+    main(user_name, password)
