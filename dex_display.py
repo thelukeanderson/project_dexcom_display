@@ -6,6 +6,7 @@ import time
 from pydexcom import Dexcom
 from login_helper import get_user_credentials
 import argparse
+import math
 
 class DexcomGlucoseDisplay:
     def __init__(self, master):
@@ -17,18 +18,28 @@ class DexcomGlucoseDisplay:
         self.master.grid_columnconfigure(0, weight=1)
         self.master.grid_rowconfigure(1, weight=1)
         self.master.grid_columnconfigure(1, weight=1)
+        self.master.grid_rowconfigure(2, weight=1)
+        self.master.grid_columnconfigure(2, weight=1)
 
         # Create a label to display the dexcom last glucose reading
         self.last_reading_label = tk.Label(self.master, fg="green", bg="black", text="---", font=("Helvetica", 36))
-        self.last_reading_label.grid(row=0, column=0, pady=(20, 10), columnspan=2)
+        self.last_reading_label.grid(row=1, column=0, pady=(20, 10), columnspan=2)
         
         # Create a label to display the reading time
         self.show_reading_time_label = tk.Label(self.master, fg="green", bg="black", text="---", font=("Helvetica", 36))
-        self.show_reading_time_label.grid(row=1, column=0, pady=(20, 10))
+        self.show_reading_time_label.grid(row=2, column=0, pady=(20, 10))
         
         # Create a label to display the current time
         self.show_current_time_label = tk.Label(self.master, fg="green", bg="black", text="---", font=("Helvetica", 36))
-        self.show_current_time_label.grid(row=1, column=1, pady=(20, 10))
+        self.show_current_time_label.grid(row=2, column=1, pady=(20, 10))
+        
+        # Create a label to display the reading time
+        self.last_1_hour_label = tk.Label(self.master, fg="green", bg="black", text="---", font=("Helvetica", 36))
+        self.last_1_hour_label.grid(row=0, column=0, pady=(20, 10))
+        
+        # Create a label to display the current time
+        self.last_24_hour_label = tk.Label(self.master, fg="green", bg="black", text="---", font=("Helvetica", 36))
+        self.last_24_hour_label.grid(row=0, column=1, pady=(20, 10))
 
         # Bind window resize event to adjust font size
         self.master.bind("<Configure>", self.adjust_font_size)
@@ -37,12 +48,22 @@ class DexcomGlucoseDisplay:
         width = self.master.winfo_width()
         reading_font_size = max(int(width / 5), 12)  
         time_font_size = max(int(width / 25), 12)  
+        average_reading_font_size = max(int(width / 10), 12)  
         self.last_reading_label.config(font=("Helvetica", reading_font_size))
         self.show_reading_time_label.config(font=("Helvetica", time_font_size))
         self.show_current_time_label.config(font=("Helvetica", time_font_size))
+        self.last_1_hour_label.config(font=("Helvetica", average_reading_font_size))
+        self.last_24_hour_label.config(font=("Helvetica", average_reading_font_size))
 
 
-def update_label(glucose_label, reading_time_label, current_time_label, user_str, password_str):
+def calculate_average(dexcom, minutes):
+    readings_list = dexcom.get_glucose_readings(minutes)
+    sum_of_sugars = 0.0
+    for reading in readings_list:
+        sum_of_sugars += float(reading.value)
+    return sum_of_sugars/len(readings_list)
+
+def update_label(glucose_label, reading_time_label, current_time_label, last_24_label, last_1_label, user_str, password_str):
     # Call the API
     dexcom = Dexcom(user_str, password_str) 
 
@@ -60,8 +81,16 @@ def update_label(glucose_label, reading_time_label, current_time_label, user_str
     current_time = datetime.now().strftime("%H:%M")
     current_time_label.configure(text=f"Current Time: {current_time}")
 
+    # Update the last 24 hour label
+    last_24_hour_average_glucose = calculate_average(dexcom, 1440)
+    last_24_label.configure(text=f"24h:{math.floor(last_24_hour_average_glucose)}")
+    
+    # Update the last 1 hour label
+    last_1_hour_average_glucose = calculate_average(dexcom, 60)
+    last_1_label.configure(text=f"1h:{math.floor(last_1_hour_average_glucose)}")
+
     # Do an update every minute
-    glucose_label.after(60000, update_label, glucose_label, reading_time_label, current_time_label, user_str, password_str)
+    glucose_label.after(60000, update_label, glucose_label, reading_time_label, current_time_label, last_24_label, last_1_label, user_str, password_str)
 
 
 def main(user_name, password):
@@ -70,8 +99,10 @@ def main(user_name, password):
     root = tk.Tk()
     root.configure(background='black')
     app = DexcomGlucoseDisplay(root)
-    update_label(app.last_reading_label, app.show_reading_time_label, app.show_current_time_label, user_name, password)
+    update_label(app.last_reading_label, app.show_reading_time_label, app.show_current_time_label, app.last_24_hour_label, app.last_1_hour_label, user_name, password)
     root.mainloop()
+
+
 
 if __name__ == "__main__":
 
